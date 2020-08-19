@@ -1,5 +1,7 @@
 #!/usr/bin/python
-import sys, os
+import sys
+import os
+from environment_readng import EnvironmentReading
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Common'))
 import LocalDatabaseConfig
 import TemperatureSensorConfig
@@ -7,20 +9,20 @@ import Adafruit_DHT
 from datetime import datetime
 import time
 import psycopg2
+import statistics
+
+
+def get_temperature(environment_reading):
+    return environment_reading.temperature_reading_f
+
+
+def get_humidity(environment_reading):
+    return environment_reading.humidity
+
 
 if len(sys.argv) != 1:
     print("Usage: Runner_TemperatureAndHumidity.py")
     exit(1)
-
-class EnvironmentReading:
-    def __init__(self, temperature, humidity):
-        self.temperature = temperature
-        self.humidity = humidity
-
-    def __repr__(self):
-        return 'Temp: {0:0.1f} F  Humidity: {1:0.1f} %'\
-            .format(self.temperature, self.humidity)
-
 
 num_reads = 5
 readings = []
@@ -31,7 +33,6 @@ for x in range(num_reads):
     humidity_reading, temperature_reading = Adafruit_DHT.read_retry(sensor_type, sensor_pin)
     temperature_reading_f = temperature_reading * 1.8 + 32
     r = EnvironmentReading(temperature_reading_f, humidity_reading)
-    print(r)
     readings.append(r)
     time.sleep(1)
 
@@ -60,9 +61,13 @@ with psycopg2.connect(
           (%s, %s);
     """
 
-    for reading in readings:
-        cursor.execute(sql_command, (reading.temperature, reading.humidity))
+    temperature = statistics.median(map(lambda rx: rx.temperature, readings))
+    humidity = statistics.median(map(lambda rx: rx.humidity, readings))
 
-    print('[{}]: Recorded {} environment readings'.format(datetime.now(), len(readings)))
+    cursor.execute(sql_command, (temperature, humidity))
+
+    print('[{}]: Recorded environment readings'.format(datetime.now()))
+    print("Median T: {}".format(temperature))
+    print("Median H: {}".format(humidity))
 
     cursor.close()
