@@ -1,5 +1,6 @@
 class EnvironmentReading:
-    def __init__(self, temperature, humidity):
+    def __init__(self, temperature, humidity, sensor_id):
+        self.sensor_id = sensor_id
         self.temperature = temperature
         self.humidity = humidity
 

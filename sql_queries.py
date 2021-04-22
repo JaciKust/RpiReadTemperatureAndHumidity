@@ -22,7 +22,7 @@ select_sensors = """
 marra_insert_temperature_humidity_reading = """
         INSERT INTO
           public.temperature_humidity_reading
-          (temperature, humidity, id_on_pi, sensor_id)
+          (temperature, humidity, sensor_id)
         VALUES
-          (%s, %s, %s, %s);
+          (%s, %s, %s);
     """
