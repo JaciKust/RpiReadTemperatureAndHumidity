@@ -16,15 +16,21 @@ class TemperatureHumiditySensor:
         num_reads = 5
         readings = []
 
-        dht = adafruit_dht.DHT22(board.D25)
+        board_pin = getattr(board, 'D{0}'.format(self.pin))
+        if self.sensor_type == 22:
+            dht = adafruit_dht.DHT22(board_pin)
+        else:
+            raise Exception("Could not determine sensor type")
         for x in range(num_reads):
-            humidity_reading = dht.humidity
-            temperature_reading = dht.temperature
-            #humidity_reading, temperature_reading = Adafruit_DHT.read_retry(self.sensor_type, board.D16)
-            temperature_reading_f = temperature_reading * 1.8 + 32
-            r = EnvironmentReading(temperature_reading_f, humidity_reading, self.db_id)
-            readings.append(r)
-            time.sleep(1)
+            try:
+                humidity_reading = dht.humidity
+                temperature_reading = dht.temperature
+                temperature_reading_f = temperature_reading * 1.8 + 32
+                r = EnvironmentReading(temperature_reading_f, humidity_reading, self.db_id)
+                readings.append(r)
+                time.sleep(1)
+            except:
+                pass
 
         temperature = statistics.median(map(lambda rx: rx.temperature, readings))
         humidity = statistics.median(map(lambda rx: rx.humidity, readings))
